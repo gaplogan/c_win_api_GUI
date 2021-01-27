@@ -1,0 +1,28 @@
+#include <windows.h>
+#include "resource.h"
+
+IDR_MYMENU MENU
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "E&xit", ID_FILE_EXIT
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "&Go", ID_HELP_ABOUT
+        MENUITEM "G&o somewhere else", 0, GRAYED
+    END
+END
+
+IDI_MYICON ICON "icone.ico"
+
+IDD_ABOUT DIALOG DISCARDABLE  0, 0, 239, 66
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Minha Caixa de Dialogo"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "&OK",IDOK,174,18,50,14
+    PUSHBUTTON      "&Cancel",IDCANCEL,174,35,50,14
+    GROUPBOX        "Sobre este programa..",IDC_STATIC,7,7,225,52
+    CTEXT           "Um programa de exemplo mostrando como usar as caixas de diálogo\r\n\r\nby Gabriel Artigas", IDC_STATIC,16,18,144,33
+END
