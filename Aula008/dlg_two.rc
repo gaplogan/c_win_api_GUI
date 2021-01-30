@@ -1,0 +1,27 @@
+#include <windows.h>
+#include "resource.h"
+
+IDR_MYMENU MENU DISCARDABLE
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "E&xit", ID_FILE_EXIT
+    END
+    POPUP "&Dialog"
+    BEGIN
+        MENUITEM "&Show", ID_DIALOG_SHOW
+        MENUITEM "&Hide", ID_DIALOG_HIDE
+    END
+END
+
+IDI_MYICON ICON "icone.ico"
+
+IDD_TOOLBAR DIALOGEX 20, 10, 150, 120
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+EXSTYLE WS_EX_TOOLWINDOW
+CAPTION "Minha caixa de ferramentas de dialogo"
+FONT 8, "MS Sans Serif"
+BEGIN
+    PUSHBUTTON "&Pressione aqui",IDC_PRESS,30,7,84,50
+    PUSHBUTTON "&Ou aqui",IDC_OTHER,30,60,84,50
+END

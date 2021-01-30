@@ -1,0 +1,26 @@
+#include <windows.h>
+#include "resource.h"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_MAIN DIALOG DISCARDABLE  0, 0, 250, 140
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Controls One"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "Adicionar",IDC_STATIC,7,10,30,8
+    EDITTEXT        IDC_TEXT,41,7,120,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_NUMBER,165,7,21,14,ES_NUMBER
+    LTEXT           "vezes.",IDC_STATIC,192,10,23,8
+    LISTBOX         IDC_LIST,7,25,155,106,LBS_NOINTEGRALHEIGHT | LBS_EXTENDEDSEL | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "&Adicionar",IDC_ADD,165,30,50,14
+    PUSHBUTTON      "&Remover",IDC_REMOVE,165,47,50,14
+    PUSHBUTTON      "&Limpar",IDC_CLEAR,165,63,50,14
+    LTEXT           "Este item foi adicionado",IDC_STATIC,7,141,86,8
+    CTEXT           "-",IDC_SHOWCOUNT,97,141,32,8
+    LTEXT           "vezes",IDC_STATIC,134,141,20,8
+END
+
