@@ -5,66 +5,86 @@ const char g_szClassName[] = "myWindowClass";
 
 #define IDC_MAIN_EDIT 101
 
+// Existe uma função completa para ler um arquivo de texto em um controle de edição. Leva como parâmetros o identificador para o controle de edição e o nome do arquivo a ser lido. Esta função perticular tem uma boa verificação de erros, o IO do arquivo é um lugar onde muitas coisas podem dar errado, então você precisa esteja atento a erros.
 BOOL LoadTextFileToEdit(HWND hEdit, LPCTSTR pszFileName)
 {
 	HANDLE hFile;
 	BOOL bSuccess = FALSE;
 
-	hFile = CreateFile(pszFileName, GENERIC_READ, FILE_SHARE_READ, NULL,
-		OPEN_EXISTING, 0, NULL);
+	// GENERIC_READ: apenas acesso de leitura
+	// FILE_SHARE_READ: tudo bem se outros programas abrirem o arquivo ao mesmo tempo que nós, mas SOMENTE se eles quiserem ler também, não queremos que eles gravem no arquivo enquanto o estamos lendo.
+	// OPEN_EXISTING: apenas abrir o arquivo se ele já existir, não criá-lo e não substituí-lo.
+	hFile = CreateFile(pszFileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+	
+	// Verificar se o identificador do arquivo é válido.
 	if(hFile != INVALID_HANDLE_VALUE)
 	{
 		DWORD dwFileSize;
 
+		// Verificar o tamanho do arquivo para saber quanta memória precisa alocar para ler tudo.
 		dwFileSize = GetFileSize(hFile, NULL);
 		if(dwFileSize != 0xFFFFFFFF)
 		{
-			LPSTR pszFileText;
-
-			pszFileText = (LPSTR)GlobalAlloc(GPTR, dwFileSize + 1);
+			// Alocamos a memória, verificamos se a alocação foi bem-sucedida
+			LPSTR pszFileText = (LPSTR)GlobalAlloc(GPTR, dwFileSize + 1);
 			if(pszFileText != NULL)
 			{
+				// Não o usamos, exceto como um parâmetro em ReadFile(). Este parâmetro DEVE ser fornecido, ou a chamada falhará sem ele.
 				DWORD dwRead;
 
+				// Carregar o conteúdo do arquivo em nosso buffer de memória.
 				if(ReadFile(hFile, pszFileText, dwFileSize, &dwRead, NULL))
 				{
+					// As funções do arquivo API não têm nenhum conceito de arquivos de texto, portanto, não farão coisas como ler uma única linha de texto ou adicionar terminadores NULL ao final de nossas strings. É por isso que alocamos um byte extra e, depois de ler o arquivo, adicionamos NULL nós mesmos para que possamos então passar o buffer de memória como uma string para SetWindowText().
 					pszFileText[dwFileSize] = 0; // Add null terminator
 					if(SetWindowText(hEdit, pszFileText))
-						bSuccess = TRUE; // It worked!
+						// Se foi bem-sucedido, definimos a variável de sucesso para TRUE
+						bSuccess = TRUE; // Funciona!
 				}
+				// Liberando o buffer de memória.
 				GlobalFree(pszFileText);
 			}
 		}
+		// Fechando o identificador de arquivo.
 		CloseHandle(hFile);
 	}
+	// Finalmente retornar ao chamador.
 	return bSuccess;
 }
 
+// Salvando/Escrevendo o arquivo.
 BOOL SaveTextFileFromEdit(HWND hEdit, LPCTSTR pszFileName)
 {
 	HANDLE hFile;
 	BOOL bSuccess = FALSE;
 
-	hFile = CreateFile(pszFileName, GENERIC_WRITE, 0, NULL,
-		CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	// Especificamos que queremos acesso de Leitura, que o arquivo deve ser sempre criado novo (e se existir será apagado ao ser aberto) e que se não existir, será criado com o atributos de arquivo normais.
+	hFile = CreateFile(pszFileName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
 	if(hFile != INVALID_HANDLE_VALUE)
 	{
-		DWORD dwTextLength;
+		// Obtemos o comprimento do buffer de memória necessário do controle de edição, uma vez que esta é a fonte dos dados.
+		DWORD dwTextLength = GetWindowTextLength(hEdit);
 
-		dwTextLength = GetWindowTextLength(hEdit);
-		// No need to bother if there's no text.
+		// Não precisa se preocupar se não houver texto.
 		if(dwTextLength > 0)
 		{
 			LPSTR pszText;
+
+			// Definir o tamanho do buffer de memória.
 			DWORD dwBufferSize = dwTextLength + 1;
 
+			// Alocar a memória
 			pszText = (LPSTR)GlobalAlloc(GPTR, dwBufferSize);
 			if(pszText != NULL)
 			{
+				// Solicitamos a string do controle de edição usando GetWindowText().
 				if(GetWindowText(hEdit, pszText, dwBufferSize))
 				{
 					DWORD dwWritten;
 
+					// Gravamos no arquivo com WriteFile().
+					// Novamente, como com ReadFile() o parâmetro que retorna o quanto foi realmente escrito é necessário, embora não o utilizemos.
 					if(WriteFile(hFile, pszText, dwTextLength, &dwWritten, NULL))
 						bSuccess = TRUE;
 				}
@@ -81,16 +101,23 @@ void DoFileOpen(HWND hwnd)
 	OPENFILENAME ofn;
 	char szFileName[MAX_PATH] = "";
 
+	// Para inicializar a estrutura como 0. Dessa forma, você não precisa definir explicitamente cada membro que não usa.
 	ZeroMemory(&ofn, sizeof(ofn));
 
+	// Especifica o comprimento, em bytes, da estrutura. Alternativa para versões anteriores do windows: OPENFILENAME_SIZE_VERSION_400
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = hwnd;
+	// Filtros para os tipos de arquivos que queremos utilizar
 	ofn.lpstrFilter = "Text Files (*.txt)\0*.txt\0All Files (*.*)\0*.*\0";
+	// Pontos para o buffer que alocamos para armazenar o nome do arquivo, uma vez que os nomes dos arquivos não podem ser maiores do que MAX_PATH este é o valor que escolhi para o tamanho do buffer.
 	ofn.lpstrFile = szFileName;
 	ofn.nMaxFile = MAX_PATH;
+	// Os sinalizadores indicam que a caixa de diálogo só deve permitir ao usuário inserir nomes de arquivos já existentes (já que queremos abri-los, não criá-los) e ocultar a opção de abrir o arquivo no modo somente leitura, que não iremos oferecer suporte.
 	ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
+	// Extensão padrão, então se o usuário digitar "nome_arquivo" e o arquivo não for encontrado, ele tentará abrir "nome_arquivo.txt" antes de finalmente desistir.
 	ofn.lpstrDefExt = "txt";
 
+	// Tentar abrir o arquivo
 	if(GetOpenFileName(&ofn))
 	{
 		HWND hEdit = GetDlgItem(hwnd, IDC_MAIN_EDIT);
@@ -103,14 +130,17 @@ void DoFileSave(HWND hwnd)
 	OPENFILENAME ofn;
 	char szFileName[MAX_PATH] = "";
 
+	// Para inicializar a estrutura como 0. Dessa forma, você não precisa definir explicitamente cada membro que não usa.
 	ZeroMemory(&ofn, sizeof(ofn));
 
+	// Especifica o comprimento, em bytes, da estrutura. Alternativa para versões anteriores do windows: OPENFILENAME_SIZE_VERSION_400
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = hwnd;
 	ofn.lpstrFilter = "Text Files (*.txt)\0*.txt\0All Files (*.*)\0*.*\0";
 	ofn.lpstrFile = szFileName;
 	ofn.nMaxFile = MAX_PATH;
 	ofn.lpstrDefExt = "txt";
+	// Nesse caso, não queremos mais exigir que o arquivo exista, mas queremos que o diretório exista, pois não vamos tentar criá-lo primeiro. Também perguntaremos ao usuário se ele seleciona um arquivo existente para certificar-se de que deseja sobrescrevê-lo.
 	ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT;
 
 	if(GetSaveFileName(&ofn))
@@ -209,7 +239,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	hwnd = CreateWindowEx(
 		0,
 		g_szClassName,
-		"theForger's Tutorial Application",
+		"Tutorial WinApi C",
 		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, CW_USEDEFAULT, 480, 320,
 		NULL, NULL, hInstance, NULL);
@@ -231,3 +261,5 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	}
 	return Msg.wParam;
 }
+
+// compilar: g++ -o app_two app_two.c app_two.o -lcomctl32 -lgdi32 -mwindows
