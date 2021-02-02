@@ -47,3 +47,5 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,LPSTR lpCmdLine,
 {
 	return DialogBox(hInstance, MAKEINTRESOURCE(IDD_MAIN), NULL, DlgProc);
 }
+
+// Compilar: gcc -o dlg_three dlg_three.c dlg_three.o -lgdi32
