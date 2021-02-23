@@ -7,3 +7,5 @@ Exemplos mostrando como criar aplica√ß√µes de ambiente gr√°fico em C utilizando 
 -lcomctl32: versıes dll de controle comuns
 -lm: bibliotecas matem·ticas
 -mwindows: aplicativo GUI independente (console gratuito)
+
+windres *.rc *.o // Para criar o arquivo .o a partir do .rc
